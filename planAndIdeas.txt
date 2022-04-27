@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------
+
+The marking scheme is given below:
+
+==
+70 marks for the implementation:
+
+    15 marks for the implementation of the “list” request type and 
+    
+    25 mmarks for each of “put”/”get” request types, broken down as follows:
+    
+        9 marks for handling the intricacies of TCP communication – i.e., that data is streamed from the source to the destination and hence data sent via a single send()/sendall() call may be fragmented and received across several sequential recv() calls, or data sent via multiple send()/sendall() calls may be collated and returned through a single recv() call. (All request types)
+    
+        3 marks for handling of connection failures mid-way through the protocol. (All request types)
+    
+        2 marks for appropriate logging/reporting. (All request types)
+    
+        1 mark for parsing of command line arguments. (All request types)
+    
+        5 marks for correct handling/transferring of binary data (binary transfer, byte ordering, etc.). (Only for “put”/”get” requests)
+    
+        5 marks for support for stability/security features such as very large files, 0-sized files, no overwriting of existing files, very long filenames, etc. (Only for “put”/”get” requests)
+    
+    5 marks for appropriate structure of your code (functions, minimal repetition of code, informative but not excessive comments, etc.).
+
+
+
+==
+30 marks for the report:
+    20 marks for the quality of the design of the application-level protocol.
+    10 marks for the discussion of the reasoning/design decisions.
+
+---------------------------------------------------------------
+
+
+
+
+
