@@ -3,8 +3,8 @@ import sys
 # Create socket
 cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Connect socket to server
-cli_sock.connect((remote hostname, port number))
-while some condition:
+cli_sock.connect((remote hostname, port number
+while True:
     # Prepare request message
     # ...
     # Send request
