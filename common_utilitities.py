@@ -27,5 +27,3 @@ import socket
 
 
 
-def usage():
-    return "Usage: <hostname> <port> <put filename|get filename|list>"

@@ -36,10 +36,11 @@ def list():
     print "here is your listing\n"
 
 # map the inputs to the function blocks
-options = {get : get,
-           put : put,
-           list : list,
-}
+options = {
+    get : get,
+    put : put,
+    list : list,
+    }
 
 options[key]()
 
