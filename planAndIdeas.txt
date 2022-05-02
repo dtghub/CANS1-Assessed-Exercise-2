@@ -25,7 +25,23 @@ then do command parsing
 
 
 
+# define the function blocks
+def put():
+    print "Your arg is put.\n"
 
+def get():
+    print "get file?\n"
+
+def list():
+    print "here is your listing\n"
+
+# map the inputs to the function blocks
+options = {get : get,
+           put : put,
+           list : list,
+}
+
+options[key]()
 
 
 
