@@ -1,5 +1,32 @@
 
 
+3 code files;
+
+client.py
+server.py
+common_utilities.py
+
+
+client needs to be able to send 
+'get'
+'put'
+'list'
+commands to the server, and to log and display appropriately to the screen
+
+server needs to be able to respond appropriatey to the above commands, and to log them on the screen
+
+
+
+
+will begin with the list command
+
+
+then do command parsing
+
+
+
+
+
 
 
 

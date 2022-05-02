@@ -15,4 +15,3 @@ while True:
     # ...
 # Close/disconnect socket
 cli_sock.close()
-
