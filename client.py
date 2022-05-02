@@ -20,7 +20,17 @@ def usage():
 def putCommand(commandLineArguments):
     isArgumentsCorrect = False
     errorText = ""
-    print("Your arg is put.\n")
+
+
+    if len(commandLineArguments) == 5:
+
+
+        print("Your arg is put.\n")
+
+    else:
+        errorText = "Too many arguments."
+
+
     return isArgumentsCorrect, errorText
 
 
@@ -28,7 +38,17 @@ def putCommand(commandLineArguments):
 def getCommand(commandLineArguments):
     isArgumentsCorrect = False
     errorText = ""
-    print("get file?\n")
+
+
+    if len(commandLineArguments) == 5:
+
+
+        print("get file?\n")
+
+    else:
+        errorText = "Too many arguments."
+
+
     return isArgumentsCorrect, errorText
 
 
@@ -39,7 +59,7 @@ def listCommand(commandLineArguments):
 
     if len(commandLineArguments) == 4:
 
-        
+
         print("here is your listing\n")
 
     else:
