@@ -5,6 +5,51 @@ import common_utilitities
 
 
 
+
+def requestList(commandLineArguments):
+    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
+    cli_sock.sendall("LIST".encode('utf-8'))
+    cli_sock.close()
+
+
+
+
+
+
+def putFile(commandLineArguments):
+    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
+    cli_sock.sendall(commandLineArguments[3].encode('utf-8'))
+
+    cli_sock.close()
+    return True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def parseArgs(arguments):
     print('#arguments: ' + str(len(sys.argv)))
     return sys.argv
@@ -28,7 +73,7 @@ def putCommand(commandLineArguments):
         print("Your arg is put.\n")
 
     else:
-        errorText = "Too many arguments."
+        errorText = "Incorrect number of arguments."
 
 
     return isArgumentsCorrect, errorText
@@ -46,7 +91,7 @@ def getCommand(commandLineArguments):
         print("get file?\n")
 
     else:
-        errorText = "Too many arguments."
+        errorText = "Incorrect number of arguments."
 
 
     return isArgumentsCorrect, errorText
@@ -59,7 +104,7 @@ def listCommand(commandLineArguments):
 
     if len(commandLineArguments) == 4:
 
-
+        requestList(commandLineArguments)
         print("here is your listing\n")
 
     else:
@@ -88,7 +133,7 @@ def dispatchCommand(commandLineArguments):
     if commandOption in commandMappings:
         isArgumentsCorrect, errorText = commandMappings[commandOption](commandLineArguments)
     else:
-        errorText = "Command  not recognised."
+        errorText = "Command not recognised."
 
 
     return isArgumentsCorrect, errorText
