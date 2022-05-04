@@ -1,4 +1,5 @@
 import os
+import struct
 import sys
 import socket
 import common_utilitities
@@ -12,6 +13,30 @@ def requestList(commandLineArguments):
     cli_sock.sendall("LIST".encode('utf-8'))
     cli_sock.close()
 
+
+
+    cli_sock.connect((commandLineArguments[1], commandLineArguments[2]))
+    rawLengthOfStringToReceive = recvall(cli_sock, 4)
+    lengthOfStringToReceive = struct.unpack('!I', rawLengthOfStringToReceive)
+    directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive)
+    cli_sock.close()
+
+    xorChecksum = common_utilitities.calculateChecksumString(directoryStringFromServer)
+
+
+    print("Checksum = " + xorChecksum)
+    print("String received; " + directoryStringFromServer[0,-1])
+
+
+
+def recvall(sock, count):
+    buf = b''
+    while count:
+        newbuf = sock.recv(count)
+        if not newbuf: return None
+        buf += newbuf
+        count -= len(newbuf)
+    return buf
 
 
 

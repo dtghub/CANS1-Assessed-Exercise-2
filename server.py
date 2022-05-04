@@ -1,7 +1,9 @@
 import os
+import struct
 import sys
 import socket
 import common_utilitities
+
 
 
 
@@ -51,13 +53,25 @@ def listCommand(commandLineArguments):
 
     # Get directory listing
     cwd = os.getcwd()
-    arrayOfFiles = os.listdir(cwd)
-    print(arrayOfFiles)
+    listOfFiles = os.listdir(cwd)
+    print(listOfFiles)
 
 
     # Send directory listing
 
-    
+    # Use '/' as the join character to avoid the need to escape characters, as it is not allowed as a filename character at system level in windows *nix or mac filesystems
+
+    joinedStringOfFiles = '/'.join(listOfFiles)
+    xorChecksum = common_utilitities.calculateChecksumString(joinedStringOfFiles)
+    joinedStringOfFiles += chr(xorChecksum)
+
+    lengthOfStringToSend = len(joinedStringOfFiles)
+
+    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cli_sock.connect(("", int(commandLineArguments[1])))
+    cli_sock.sendall(struct.pack('!I', lengthOfStringToSend))
+    cli_sock.sendall(joinedStringOfFiles)
+    cli_sock.close()
 
 
     return isArgumentsCorrect, errorText

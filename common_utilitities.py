@@ -26,4 +26,11 @@ import socket
 #function to report error in command line and to output a usage text
 
 
+# xor all the characters in a string to geneate a simple checksum
+def calculateChecksumString(stringToCheck):
+    xorChecksum = 0
+    for character in stringToCheck:
+        xorChecksum = xorChecksum ^ ord(character)
+    return xorChecksum
 
+    
