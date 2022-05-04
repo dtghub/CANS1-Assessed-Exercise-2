@@ -70,7 +70,7 @@ def listCommand(commandLineArguments):
     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cli_sock.connect(("", int(commandLineArguments[1])))
     cli_sock.sendall(struct.pack('!I', lengthOfStringToSend))
-    cli_sock.sendall(joinedStringOfFiles)
+    cli_sock.sendall(joinedStringOfFiles.encode())
     cli_sock.close()
 
 
@@ -123,7 +123,7 @@ def dispatchServer(commandLineArguments):
     while True:
         cli_sock, cli_addr = srv_sock.accept()
         request = cli_sock.recv(1024)
-        requestCommand = request.decode('utf-8')
+        requestCommand = request.decode()
         print(str(cli_addr) + ": " + requestCommand)
         cli_sock.close()
         print(commandLineArguments)

@@ -14,11 +14,12 @@ def requestList(commandLineArguments):
     cli_sock.close()
 
 
-
-    cli_sock.connect((commandLineArguments[1], commandLineArguments[2]))
+    print(commandLineArguments)
+    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
     rawLengthOfStringToReceive = recvall(cli_sock, 4)
     lengthOfStringToReceive = struct.unpack('!I', rawLengthOfStringToReceive)
-    directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive)
+    directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive).decode()
     cli_sock.close()
 
     xorChecksum = common_utilitities.calculateChecksumString(directoryStringFromServer)
@@ -45,7 +46,7 @@ def recvall(sock, count):
 def putFile(commandLineArguments):
     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
-    cli_sock.sendall(commandLineArguments[3].encode('utf-8'))
+    cli_sock.sendall(commandLineArguments[3].encode())
 
     cli_sock.close()
     return True
