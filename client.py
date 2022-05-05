@@ -17,10 +17,17 @@ def requestList(commandLineArguments):
     print(commandLineArguments)
     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
+
+    print(commandLineArguments[1])
+    print("point B")
+
     rawLengthOfStringToReceive = recvall(cli_sock, 4)
     lengthOfStringToReceive = struct.unpack('!I', rawLengthOfStringToReceive)
     directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive).decode()
     cli_sock.close()
+
+
+    print(directoryStringFromServer)
 
     xorChecksum = common_utilitities.calculateChecksumString(directoryStringFromServer)
 

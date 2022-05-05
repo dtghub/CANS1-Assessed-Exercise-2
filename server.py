@@ -63,7 +63,12 @@ def listCommand(commandLineArguments):
 
     joinedStringOfFiles = '/'.join(listOfFiles)
     xorChecksum = common_utilitities.calculateChecksumString(joinedStringOfFiles)
-    joinedStringOfFiles += chr(xorChecksum)
+
+    print(joinedStringOfFiles)
+    print(xorChecksum)
+
+
+    # joinedStringOfFiles += chr(xorChecksum)
 
     lengthOfStringToSend = len(joinedStringOfFiles)
 
@@ -123,10 +128,11 @@ def dispatchServer(commandLineArguments):
     while True:
         cli_sock, cli_addr = srv_sock.accept()
         request = cli_sock.recv(1024)
-        requestCommand = request.decode()
+        requestCommand = request.decode('utf-8')
         print(str(cli_addr) + ": " + requestCommand)
         cli_sock.close()
         print(commandLineArguments)
+        print("point A")
         isArgumentsCorrect, errorText = dispatchCommand(commandLineArguments, requestCommand)
 
 
