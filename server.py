@@ -134,7 +134,7 @@ def dispatchServer(commandLineArguments):
         cli_sock.close()
         print(commandLineArguments)
         print("point A")
-        isArgumentsCorrect, errorText = dispatchCommand(requestCommand)
+        isArgumentsCorrect, errorText = dispatchCommand(commandLineArguments, requestCommand)
 
 
 
