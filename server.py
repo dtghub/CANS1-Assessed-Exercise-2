@@ -32,7 +32,8 @@ def putCommand(commandLineArguments):
 def getCommand(commandLineArguments):
     isArgumentsCorrect = False
     errorText = ""
-
+    print("get command")
+    print(commandLineArguments)
 
     if len(commandLineArguments) == 5:
 
@@ -133,7 +134,7 @@ def dispatchServer(commandLineArguments):
         cli_sock.close()
         print(commandLineArguments)
         print("point A")
-        isArgumentsCorrect, errorText = dispatchCommand(commandLineArguments, requestCommand)
+        isArgumentsCorrect, errorText = dispatchCommand(requestCommand)
 
 
 

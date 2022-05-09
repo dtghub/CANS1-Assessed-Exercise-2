@@ -114,17 +114,50 @@ def putCommand(commandLineArguments):
 
 
 def getCommand(commandLineArguments):
-    isArgumentsCorrect = False
+    isArgumentsCorrect = True
     errorText = ""
 
 
-    if len(commandLineArguments) == 5:
 
+    if len(commandLineArguments) == 5:
+        host = commandLineArguments[1]
+        port = int(commandLineArguments[2])
+        filename = commandLineArguments[4]
 
         print("get file?\n")
+        s = socket.socket()
+        s.connect((host,port))
+
+
+        s.send("GET"+"/"+filename)
+        data = s.recv(1024)
+        if data[:6] == 'EXISTS':
+            filesize = long(data[6:])
+            message = raw_input("File Exists, " + str(filesize)+"Bytes, download? (Y/N)? -> ")
+            if message == 'Y':
+                s.send('OK')
+                f = open('new_' + filename, 'wb')
+                data = s.recv(1024)
+                totalRecv = len(data)
+                f.write(data)
+                while totalRecv < filesize:
+                    data = s.recv(1024)
+                    totalRecv += len(data)
+                    f.write(data)
+                    print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done")
+                print("Download Complete")
+            else:
+                print("File does not exist")
+        s.close()
 
     else:
         errorText = "Incorrect number of arguments."
+        isArgumentsCorrect = False
+    print(commandLineArguments)
+    
+
+
+
 
 
     return isArgumentsCorrect, errorText
