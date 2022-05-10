@@ -10,37 +10,33 @@ import common_utilitities
 
 
 
-
-
 def putCommand(commandLineArguments, serverRequest, sock):
-    isArgumentsCorrect = False
+    isArgumentsCorrect = True
     errorText = ""
+    filename = serverRequest.split('/')[1]
+    fileSize = int(serverRequest.split('/')[2])
 
+    print("Your arg is put.\n")
+    print(serverRequest)
+    sock.send("OK")
+    f = open('new_' + filename, 'wb')
+    data = sock.recv(1024)
+    totalRecv = len(data)
 
-    if len(commandLineArguments) == 5:
-        # host = commandLineArguments[1]
-        # port = int(commandLineArguments[2])
-        filename = serverRequest.split('/')[1]
-        fileSize = serverRequest.split('/')[2]
-
-        print("Your arg is put.\n")
-        sock.send("ACKPUT")
-
-
-
-
-
-
-    else:
-        errorText = "Incorrect number of arguments."
-
+    f.write(data)
+    while totalRecv < fileSize:
+        data = sock.recv(1024)
+        totalRecv += len(data)
+        f.write(data)
+        print("{0:.2f}".format((totalRecv/float(fileSize)) * 100) + "% Done: " + str(len(data)) + " bytes received")
+    print("Download Complete")
 
     return isArgumentsCorrect, errorText
 
 
 
 def getCommand(commandLineArguments, serverRequest, sock):
-    isArgumentsCorrect = False
+    isArgumentsCorrect = True
     errorText = ""
     print("get command")
     print(commandLineArguments)

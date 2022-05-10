@@ -49,13 +49,13 @@ def recvall(sock, count):
 
 
 
-def putFile(commandLineArguments):
-    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
-    cli_sock.sendall(commandLineArguments[3].encode())
+# def putFile(commandLineArguments):
+#     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
+#     cli_sock.sendall(commandLineArguments[3].encode())
 
-    cli_sock.close()
-    return True
+#     cli_sock.close()
+#     return True
 
 
 
@@ -100,13 +100,35 @@ def putCommand(commandLineArguments):
 
 
     if len(commandLineArguments) == 5:
-
-
         print("Your arg is put.\n")
+        host = commandLineArguments[1]
+        port = int(commandLineArguments[2])
+        filename = commandLineArguments[4]
+
+        sock = socket.socket()
+        sock.connect((host,port))
+
+
+        if os.path.isfile(filename):
+            fileSize = str(os.path.getsize(filename)) 
+            print("Sending PUT")
+            sock.send("PUT" + '/' + filename + '/' + fileSize)
+            userResponse = sock.recv(1024)
+            print("Response: " + userResponse)
+            if userResponse[:2] == 'OK':
+                with open(filename, 'rb') as f:
+                    bytesToSend = f.read(1024)
+                    sock.send(bytesToSend)
+                    while bytesToSend != "":
+                        bytesToSend = f.read(1024)
+                        sock.send(bytesToSend)
+        else:
+            sock.send("ERR")
+
 
     else:
         errorText = "Incorrect number of arguments."
-
+        isArgumentsCorrect = False
 
     return isArgumentsCorrect, errorText
 
