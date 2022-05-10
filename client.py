@@ -6,44 +6,44 @@ import common_utilitities
 
 
 
-def requestList(commandLineArguments):
-    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
-    cli_sock.sendall("LIST".encode('utf-8'))
-    cli_sock.close()
+# def requestList(commandLineArguments):
+#     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
+#     cli_sock.sendall("LIST".encode('utf-8'))
+#     cli_sock.close()
 
 
-    print(commandLineArguments)
-    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
+#     print(commandLineArguments)
+#     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
 
-    print(commandLineArguments[1])
-    print("point B")
+#     print(commandLineArguments[1])
+#     print("point B")
 
-    rawLengthOfStringToReceive = recvall(cli_sock, 4)
-    lengthOfStringToReceive = struct.unpack('!I', rawLengthOfStringToReceive)
-    directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive).decode()
-    cli_sock.close()
-
-
-    print(directoryStringFromServer)
-
-    xorChecksum = common_utilitities.calculateChecksumString(directoryStringFromServer)
+#     rawLengthOfStringToReceive = recvall(cli_sock, 4)
+#     lengthOfStringToReceive = struct.unpack('!I', rawLengthOfStringToReceive)
+#     directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive).decode()
+#     cli_sock.close()
 
 
-    print("Checksum = " + xorChecksum)
-    print("String received; " + directoryStringFromServer[0,-1])
+#     print(directoryStringFromServer)
+
+#     xorChecksum = common_utilitities.calculateChecksumString(directoryStringFromServer)
+
+
+#     print("Checksum = " + xorChecksum)
+#     print("String received; " + directoryStringFromServer[0,-1])
 
 
 
-def recvall(sock, count):
-    buf = b''
-    while count:
-        newbuf = sock.recv(count)
-        if not newbuf: return None
-        buf += newbuf
-        count -= len(newbuf)
-    return buf
+# def recvall(sock, count):
+#     buf = b''
+#     while count:
+#         newbuf = sock.recv(count)
+#         if not newbuf: return None
+#         buf += newbuf
+#         count -= len(newbuf)
+#     return buf
 
 
 
@@ -113,14 +113,15 @@ def putCommand(commandLineArguments):
             sock.connect((host,port))
             fileSize = str(os.path.getsize(filename)) 
             print("Sending PUT")
-            sock.send("PUT" + '/' + filename + '/' + fileSize)
-            userResponse = sock.recv(1024)
+            messageToSend = "PUT" + '/' + filename + '/' + fileSize
+            sock.send(messageToSend.encode())
+            userResponse = sock.recv(1024).decode()
             print("Response: " + userResponse)
             if userResponse[:2] == 'OK':
                 with open(filename, 'rb') as f:
                     bytesToSend = f.read(1024)
                     sock.send(bytesToSend)
-                    while bytesToSend != "":
+                    while len(bytesToSend) != 0:
                         bytesToSend = f.read(1024)
                         sock.send(bytesToSend)
         else:
@@ -152,13 +153,13 @@ def getCommand(commandLineArguments):
         s = socket.socket()
         s.connect((host,port))
 
-
-        s.send("GET"+"/"+filename)
-        data = s.recv(1024)
+        messageToSend = "GET"+"/"+filename
+        s.send(messageToSend.encode())
+        data = s.recv(1024).decode()
         if data[:6] == 'EXISTS':
             filesize = int(data[6:])
             print("File Exists, " + str(filesize)+" bytes")
-            s.send('OK')
+            s.send('OK'.encode())
             f = open('new_' + filename, 'wb')
             data = s.recv(1024)
             totalRecv = len(data)
@@ -199,23 +200,23 @@ def listCommand(commandLineArguments):
         sock = socket.socket()
         sock.connect((host,port))
         print("Sending LIST")
-        sock.send("LIST")
+        sock.send("LIST".encode())
 
 
         listingString = ""
         # requestList(commandLineArguments)
         print("here is your listing\n")
-        data = sock.recv(1024)
+        data = sock.recv(1024).decode()
         print(data)
         if data.split('/')[0] == "OK":
             print("Got OK")
             filesize = int(data.split('/')[1])
             # checksum = data.split('/')[2]
-            sock.send('OK')
-            data = sock.recv(1024)
+            sock.send('OK'.encode())
+            data = sock.recv(1024).decode()
             listingString += data
             while len(listingString) < filesize:
-                data = sock.recv(1024)
+                data = sock.recv(1024).decode()
                 listingString += data
         else:
             isArgumentsCorrect = False
