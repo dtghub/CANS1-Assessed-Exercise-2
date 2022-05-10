@@ -1,6 +1,4 @@
-from fileinput import filename
 import os
-import struct
 import sys
 import socket
 import common_utilitities
