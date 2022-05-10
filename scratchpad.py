@@ -20,8 +20,9 @@ def RetrFile(name, sock):
             with open(filename, 'rb') as f:
                 bytesToSend = f.read(1024)
                 sock.send(bytesToSend)
-                while bytesToSend = f.read(1024)
-                sock.send(bytesToSend)
+                while bytesToSend != "":
+                    bytesToSend = f.read(1024)
+                    sock.send(bytesToSend)
     else:
         sock.send("ERR")
     sock.close()

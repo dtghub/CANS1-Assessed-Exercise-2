@@ -1,3 +1,4 @@
+from fileinput import filename
 import os
 import struct
 import sys
@@ -11,7 +12,7 @@ import common_utilitities
 
 
 
-def putCommand(commandLineArguments):
+def putCommand(commandLineArguments, serverRequest, sock):
     isArgumentsCorrect = False
     errorText = ""
 
@@ -29,26 +30,40 @@ def putCommand(commandLineArguments):
 
 
 
-def getCommand(commandLineArguments):
+def getCommand(commandLineArguments, serverRequest, sock):
     isArgumentsCorrect = False
     errorText = ""
     print("get command")
     print(commandLineArguments)
+    print(serverRequest)
+    print(os.getcwd())
+    print(os.path.isfile('test.txt'))
 
-    if len(commandLineArguments) == 5:
-
-
-        print("get file?\n")
-
+    filename = serverRequest.split('/')[1]
+    print(filename)
+    print(os.path.isfile(serverRequest[1]))
+    if os.path.isfile(filename):
+        print("Sending EXISTS")
+        sock.send("EXISTS" + str(os.path.getsize(filename)))
+        userResponse = sock.recv(1024)
+        print("Response: " + userResponse)
+        if userResponse[:2] == 'OK':
+            with open(filename, 'rb') as f:
+                bytesToSend = f.read(1024)
+                sock.send(bytesToSend)
+                while bytesToSend != "":
+                    bytesToSend = f.read(1024)
+                    sock.send(bytesToSend)
     else:
-        errorText = "Incorrect number of arguments."
+        sock.send("ERR")
+    
 
 
     return isArgumentsCorrect, errorText
 
 
 
-def listCommand(commandLineArguments):
+def listCommand(commandLineArguments, serverRequest, sock):
     isArgumentsCorrect = False
     errorText = ""
 
@@ -86,7 +101,7 @@ def listCommand(commandLineArguments):
 
 
 
-def dispatchCommand(commandLineArguments, requestCommand):
+def dispatchCommand(commandLineArguments, serverRequest, sock):
     isArgumentsCorrect = False
     errorText = ""
     commandMappings = {
@@ -95,8 +110,15 @@ def dispatchCommand(commandLineArguments, requestCommand):
         "LIST" : listCommand,
     }
 
-    if requestCommand in commandMappings:
-        isArgumentsCorrect, errorText = commandMappings[requestCommand](commandLineArguments)
+    print("Point B")
+
+    commandType = serverRequest.split("/")[0]
+
+    print(commandType)
+
+    if commandType in commandMappings:
+        print("point C")
+        isArgumentsCorrect, errorText = commandMappings[commandType](commandLineArguments, serverRequest, sock)
     else:
         errorText = "Command not recognised."
 
@@ -129,12 +151,12 @@ def dispatchServer(commandLineArguments):
     while True:
         cli_sock, cli_addr = srv_sock.accept()
         request = cli_sock.recv(1024)
-        requestCommand = request.decode('utf-8')
-        print(str(cli_addr) + ": " + requestCommand)
-        cli_sock.close()
+        serverRequest = request.decode('utf-8')
+        print(str(cli_addr) + ": " + serverRequest)
         print(commandLineArguments)
         print("point A")
-        isArgumentsCorrect, errorText = dispatchCommand(commandLineArguments, requestCommand)
+        isArgumentsCorrect, errorText = dispatchCommand(commandLineArguments, serverRequest, cli_sock)
+        cli_sock.close()
 
 
 

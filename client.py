@@ -146,8 +146,9 @@ def getCommand(commandLineArguments):
                     f.write(data)
                     print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done")
                 print("Download Complete")
-            else:
-                print("File does not exist")
+        else:
+            print(data)
+            print("File does not exist")
         s.close()
 
     else:
