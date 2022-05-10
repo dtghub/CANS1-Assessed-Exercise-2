@@ -18,9 +18,18 @@ def putCommand(commandLineArguments, serverRequest, sock):
 
 
     if len(commandLineArguments) == 5:
-
+        # host = commandLineArguments[1]
+        # port = int(commandLineArguments[2])
+        filename = serverRequest.split('/')[1]
+        fileSize = serverRequest.split('/')[2]
 
         print("Your arg is put.\n")
+        sock.send("ACKPUT")
+
+
+
+
+
 
     else:
         errorText = "Incorrect number of arguments."

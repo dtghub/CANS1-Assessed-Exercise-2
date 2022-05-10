@@ -1,5 +1,4 @@
 import os
-import struct
 import sys
 import socket
 import common_utilitities
@@ -96,7 +95,7 @@ def usage():
 
 
 def putCommand(commandLineArguments):
-    isArgumentsCorrect = False
+    isArgumentsCorrect = True
     errorText = ""
 
 
@@ -133,19 +132,18 @@ def getCommand(commandLineArguments):
         data = s.recv(1024)
         if data[:6] == 'EXISTS':
             filesize = long(data[6:])
-            message = raw_input("File Exists, " + str(filesize)+"Bytes, download? (Y/N)? -> ")
-            if message == 'Y':
-                s.send('OK')
-                f = open('new_' + filename, 'wb')
+            print("File Exists, " + str(filesize)+" bytes")
+            s.send('OK')
+            f = open('new_' + filename, 'wb')
+            data = s.recv(1024)
+            totalRecv = len(data)
+            f.write(data)
+            while totalRecv < filesize:
                 data = s.recv(1024)
-                totalRecv = len(data)
+                totalRecv += len(data)
                 f.write(data)
-                while totalRecv < filesize:
-                    data = s.recv(1024)
-                    totalRecv += len(data)
-                    f.write(data)
-                    print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done")
-                print("Download Complete")
+                print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done: " + str(len(data)) + " bytes received")
+            print("Download Complete")
         else:
             print(data)
             print("File does not exist")
