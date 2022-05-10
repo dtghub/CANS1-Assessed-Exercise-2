@@ -156,7 +156,7 @@ def getCommand(commandLineArguments):
         s.send("GET"+"/"+filename)
         data = s.recv(1024)
         if data[:6] == 'EXISTS':
-            filesize = long(data[6:])
+            filesize = int(data[6:])
             print("File Exists, " + str(filesize)+" bytes")
             s.send('OK')
             f = open('new_' + filename, 'wb')
@@ -179,26 +179,59 @@ def getCommand(commandLineArguments):
         isArgumentsCorrect = False
     print(commandLineArguments)
     
-
-
-
-
-
     return isArgumentsCorrect, errorText
 
 
 
+
+
+
 def listCommand(commandLineArguments):
-    isArgumentsCorrect = False
+    isArgumentsCorrect = True
     errorText = ""
 
     if len(commandLineArguments) == 4:
+        print("List request")
 
-        requestList(commandLineArguments)
+        host = commandLineArguments[1]
+        port = int(commandLineArguments[2])
+
+        sock = socket.socket()
+        sock.connect((host,port))
+        print("Sending LIST")
+        sock.send("LIST")
+
+
+        listingString = ""
+        # requestList(commandLineArguments)
         print("here is your listing\n")
+        data = sock.recv(1024)
+        print(data)
+        if data.split('/')[0] == "OK":
+            print("Got OK")
+            filesize = int(data.split('/')[1])
+            # checksum = data.split('/')[2]
+            sock.send('OK')
+            data = sock.recv(1024)
+            listingString += data
+            while len(listingString) < filesize:
+                data = sock.recv(1024)
+                listingString += data
+        else:
+            isArgumentsCorrect = False
+            errorText = "Server error"
+
+        print(listingString.split('/'))
+
+
+
+
+
+
 
     else:
         errorText = "Too many arguments."
+        isArgumentsCorrect = False
 
 
     return isArgumentsCorrect, errorText

@@ -69,7 +69,7 @@ def getCommand(commandLineArguments, serverRequest, sock):
 
 
 def listCommand(commandLineArguments, serverRequest, sock):
-    isArgumentsCorrect = False
+    isArgumentsCorrect = True
     errorText = ""
 
     # Get directory listing
@@ -83,21 +83,39 @@ def listCommand(commandLineArguments, serverRequest, sock):
     # Use '/' as the join character to avoid the need to escape characters, as it is not allowed as a filename character at system level in windows *nix or mac filesystems
 
     joinedStringOfFiles = '/'.join(listOfFiles)
-    xorChecksum = common_utilitities.calculateChecksumString(joinedStringOfFiles)
+    # xorChecksum = common_utilitities.calculateChecksumString(joinedStringOfFiles)
+    xorChecksum = "45" # teporary dummy value
 
     print(joinedStringOfFiles)
-    print(xorChecksum)
+    # print(xorChecksum)
 
 
     # joinedStringOfFiles += chr(xorChecksum)
 
     lengthOfStringToSend = len(joinedStringOfFiles)
 
-    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    cli_sock.connect(("", int(commandLineArguments[1])))
-    cli_sock.sendall(struct.pack('!I', lengthOfStringToSend))
-    cli_sock.sendall(joinedStringOfFiles.encode())
-    cli_sock.close()
+    # cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # cli_sock.connect(("", int(commandLineArguments[1])))
+    # cli_sock.sendall(struct.pack('!I', lengthOfStringToSend))
+    # cli_sock.sendall(joinedStringOfFiles.encode())
+    # cli_sock.close()
+
+    header = "OK/" + str(lengthOfStringToSend) + '/' + xorChecksum
+    sock.send(header)
+    userResponse = sock.recv(1024)
+    if userResponse[:2] == 'OK':
+        bytesSent = 0
+        while bytesSent < lengthOfStringToSend:
+            if (lengthOfStringToSend - bytesSent) < 1024:
+                sock.send(joinedStringOfFiles[bytesSent:lengthOfStringToSend])
+                bytesSent = lengthOfStringToSend
+            else:
+                sock.send(joinedStringOfFiles[bytesSent + 1:bytesSent + 1024])
+                bytesSent += 1024
+
+
+
+
 
 
     return isArgumentsCorrect, errorText
