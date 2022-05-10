@@ -22,7 +22,7 @@ import common_utilitities
 
 #     rawLengthOfStringToReceive = recvall(cli_sock, 4)
 #     lengthOfStringToReceive = struct.unpack('!I', rawLengthOfStringToReceive)
-#     directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive).decode()
+#     directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive).decode('utf-8')
 #     cli_sock.close()
 
 
@@ -52,7 +52,7 @@ import common_utilitities
 # def putFile(commandLineArguments):
 #     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
-#     cli_sock.sendall(commandLineArguments[3].encode())
+#     cli_sock.sendall(commandLineArguments[3].encode('utf-8'))
 
 #     cli_sock.close()
 #     return True
@@ -114,8 +114,8 @@ def putCommand(commandLineArguments):
             fileSize = str(os.path.getsize(filename)) 
             print("Sending PUT")
             messageToSend = "PUT" + '/' + filename + '/' + fileSize
-            sock.send(messageToSend.encode())
-            userResponse = sock.recv(1024).decode()
+            sock.send(messageToSend.encode('utf-8'))
+            userResponse = sock.recv(1024).decode('utf-8')
             print("Response: " + userResponse)
             if userResponse[:2] == 'OK':
                 with open(filename, 'rb') as f:
@@ -150,22 +150,22 @@ def getCommand(commandLineArguments):
         filename = commandLineArguments[4]
 
         print("get file?\n")
-        s = socket.socket()
-        s.connect((host,port))
+        sock = socket.socket()
+        sock.connect((host,port))
 
         messageToSend = "GET"+"/"+filename
-        s.send(messageToSend.encode())
-        data = s.recv(1024).decode()
+        sock.send(messageToSend.encode('utf-8'))
+        data = sock.recv(1024).decode('utf-8')
         if data[:6] == 'EXISTS':
             filesize = int(data[6:])
             print("File Exists, " + str(filesize)+" bytes")
-            s.send('OK'.encode())
+            sock.send('OK'.encode('utf-8'))
             f = open('new_' + filename, 'wb')
-            data = s.recv(1024)
+            data = sock.recv(1024)
             totalRecv = len(data)
             f.write(data)
             while totalRecv < filesize:
-                data = s.recv(1024)
+                data = sock.recv(1024)
                 totalRecv += len(data)
                 f.write(data)
                 print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done: " + str(len(data)) + " bytes received")
@@ -173,7 +173,7 @@ def getCommand(commandLineArguments):
         else:
             print(data)
             print("File does not exist")
-        s.close()
+        sock.close()
 
     else:
         errorText = "Incorrect number of arguments."
@@ -200,23 +200,23 @@ def listCommand(commandLineArguments):
         sock = socket.socket()
         sock.connect((host,port))
         print("Sending LIST")
-        sock.send("LIST".encode())
+        sock.send("LIST".encode('utf-8'))
 
 
         listingString = ""
         # requestList(commandLineArguments)
         print("here is your listing\n")
-        data = sock.recv(1024).decode()
+        data = sock.recv(1024).decode('utf-8')
         print(data)
         if data.split('/')[0] == "OK":
             print("Got OK")
             filesize = int(data.split('/')[1])
             # checksum = data.split('/')[2]
-            sock.send('OK'.encode())
-            data = sock.recv(1024).decode()
+            sock.send('OK'.encode('utf-8'))
+            data = sock.recv(1024).decode('utf-8')
             listingString += data
             while len(listingString) < filesize:
-                data = sock.recv(1024).decode()
+                data = sock.recv(1024).decode('utf-8')
                 listingString += data
         else:
             isArgumentsCorrect = False

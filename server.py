@@ -16,7 +16,7 @@ def putCommand(commandLineArguments, serverRequest, sock):
 
     print("Your arg is put.\n")
     print(serverRequest)
-    sock.send("OK".encode())
+    sock.send("OK".encode('utf-8'))
     f = open('new_' + filename, 'wb')
     data = sock.recv(1024)
     totalRecv = len(data)
@@ -48,8 +48,8 @@ def getCommand(commandLineArguments, serverRequest, sock):
     if os.path.isfile(filename):
         print("Sending EXISTS")
         messageToSend = "EXISTS" + str(os.path.getsize(filename))
-        sock.send(messageToSend.encode())
-        userResponse = sock.recv(1024).decode()
+        sock.send(messageToSend.encode('utf-8'))
+        userResponse = sock.recv(1024).decode('utf-8')
         print("Response: " + userResponse)
         if userResponse[:2] == 'OK':
             with open(filename, 'rb') as f:
@@ -60,7 +60,7 @@ def getCommand(commandLineArguments, serverRequest, sock):
                     print(len(bytesToSend))
                     sock.send(bytesToSend)
     else:
-        sock.send("ERR".encode())
+        sock.send("ERR".encode('utf-8'))
     
 
     print("About to return from getCommand()")
@@ -97,20 +97,20 @@ def listCommand(commandLineArguments, serverRequest, sock):
     # cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # cli_sock.connect(("", int(commandLineArguments[1])))
     # cli_sock.sendall(struct.pack('!I', lengthOfStringToSend))
-    # cli_sock.sendall(joinedStringOfFiles.encode())
+    # cli_sock.sendall(joinedStringOfFiles.encode('utf-8'))
     # cli_sock.close()
 
     header = "OK/" + str(lengthOfStringToSend) + '/' + xorChecksum
-    sock.send(header.encode())
-    userResponse = sock.recv(1024).decode()
+    sock.send(header.encode('utf-8'))
+    userResponse = sock.recv(1024).decode('utf-8')
     if userResponse[:2] == 'OK':
         bytesSent = 0
         while bytesSent < lengthOfStringToSend:
             if (lengthOfStringToSend - bytesSent) < 1024:
-                sock.send(joinedStringOfFiles[bytesSent:lengthOfStringToSend].encode())
+                sock.send(joinedStringOfFiles[bytesSent:lengthOfStringToSend].encode('utf-8'))
                 bytesSent = lengthOfStringToSend
             else:
-                sock.send(joinedStringOfFiles[bytesSent + 1:bytesSent + 1024].encode())
+                sock.send(joinedStringOfFiles[bytesSent + 1:bytesSent + 1024].encode('utf-8'))
                 bytesSent += 1024
 
 
