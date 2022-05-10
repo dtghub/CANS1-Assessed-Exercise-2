@@ -101,15 +101,16 @@ def putCommand(commandLineArguments):
 
     if len(commandLineArguments) == 5:
         print("Your arg is put.\n")
-        host = commandLineArguments[1]
-        port = int(commandLineArguments[2])
+
+
         filename = commandLineArguments[4]
-
-        sock = socket.socket()
-        sock.connect((host,port))
-
-
         if os.path.isfile(filename):
+            host = commandLineArguments[1]
+            port = int(commandLineArguments[2])
+
+
+            sock = socket.socket()
+            sock.connect((host,port))
             fileSize = str(os.path.getsize(filename)) 
             print("Sending PUT")
             sock.send("PUT" + '/' + filename + '/' + fileSize)
@@ -123,7 +124,9 @@ def putCommand(commandLineArguments):
                         bytesToSend = f.read(1024)
                         sock.send(bytesToSend)
         else:
-            sock.send("ERR")
+            errorText = "Filename not found"
+            isArgumentsCorrect = False
+
 
 
     else:
