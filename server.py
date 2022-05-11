@@ -9,59 +9,78 @@ def serverUsage():
 
 
 
-def parseArgs(arguments):
+def parseArgs():
     return sys.argv
 
 
 
 
 def putCommand(serverRequest, sock):
+    serverStatus = ""
     filename = serverRequest.split('/')[1]
     filesize = int(serverRequest.split('/')[2])
     if not os.path.isfile(filename):
         sock.send("OK/".encode('utf-8'))
-        recv_file(sock, filename, filesize)
+        serverStatus = recv_file(sock, filename, filesize)
     else:
-        displayError("Put request from client; A file named '" + filename + "' already exists in this folder.")
+        serverStatus = "A file named '" + filename + "' already exists on the server."
         sock.send("EXISTS/".encode('utf-8'))
+    
+    return serverStatus
 
 
 
 
 def getCommand(serverRequest, sock):
+    serverStatus = ""
     filename = serverRequest.split('/')[1]
     if os.path.isfile(filename):
         messageToSend = "EXISTS" + '/' + str(os.path.getsize(filename))
         sock.send(messageToSend.encode('utf-8'))
         userResponse = sock.recv(1024).decode('utf-8')
         if userResponse.split('/')[0] == 'OK':
-            send_file(sock, filename)
+            serverStatus = send_file(sock, filename)
+        else:
+            serverStatus = "Expected 'OK' response not received from client."
     else:
         sock.send("ERR".encode('utf-8'))
-        displayError("File '" + filename + "' requested by the client not found.")
+        serverStatus = "File '" + filename + "' not found."
 
+    return serverStatus
 
 
 def listCommand(serverRequest, sock):
-    send_listing(sock)
+    serverStatus = send_listing(sock)
+    return serverStatus
 
 
 
-
-def dispatchCommand(serverRequest, sock):
+def dispatchCommand(serverRequest, sock, addr):
     commandMappings = {
         "GET" : getCommand,
         "PUT" : putCommand,
         "LIST" : listCommand,
     }
 
-    commandType = serverRequest.split("/")[0]
+    serverStatus = ""
+    requestItems = serverRequest.split("/")
+    commandType = requestItems[0]
     if commandType in commandMappings:
-        commandMappings[commandType](serverRequest, sock)
+        serverStatus = commandMappings[commandType](serverRequest, sock)
     else:
-        displayError("Unrecognised command '" + commandType + "' received from client.")
+        serverStatus = "Unrecognised command '" + commandType + "' received from client."
 
+    serverInfo = ""
+    if len(requestItems) > 1:
+        serverInfo = requestItems[0] + " " + requestItems[1]
+    else:
+        serverInfo = requestItems[0]
 
+    clientInfo = "Request from client: " + serverInfo + "  Address: " + addr[0] + "  Socket: " + str(addr[1])
+    if serverStatus == "":
+        displayMessage("[SUCCESS] " + clientInfo)
+    else:
+        displayMessage("[ERROR] " + serverStatus + "  " + clientInfo)
 
 
 
@@ -74,7 +93,7 @@ def dispatchServer(commandLineArguments):
         cli_sock, cli_addr = srv_sock.accept()
         request = cli_sock.recv(1024)
         serverRequest = request.decode('utf-8')
-        dispatchCommand(serverRequest, cli_sock)
+        dispatchCommand(serverRequest, cli_sock, cli_addr)
         cli_sock.close()
 
 
@@ -82,7 +101,7 @@ def dispatchServer(commandLineArguments):
 
 def main():
     os.chdir('server_data')
-    commandLineArguments = parseArgs(sys.argv)
+    commandLineArguments = parseArgs()
     if len(commandLineArguments) == 2:
         dispatchServer(commandLineArguments)
     else:

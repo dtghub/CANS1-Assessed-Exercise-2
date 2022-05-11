@@ -32,7 +32,9 @@ def putCommand(commandLineArguments):
             elif userResponse.split('/')[0] == "EXISTS":
                 displayError("A file named '" + filename + "' already exists on the server.")
             else:
-                displayError("File '" + filename + "' not found.")
+                displayError("Server did not reply with expected 'OK' message")
+        else:
+            displayError("File '" + filename + "' not found.")
     else:
         displayError("Incorrect number of arguments. " + clientUsage())
 
@@ -57,7 +59,7 @@ def getCommand(commandLineArguments):
                 sock.send('OK/'.encode('utf-8'))
                 recv_file(sock, filename, filesize)
             else:
-                displayError("Server did not respond with 'EXISTS' message when given finename.")
+                displayError("Server did not respond with 'EXISTS' message when given filename.")
                 sock.close()
         else:
             displayError("A file named '" + filename + "' already exists in this folder.")
@@ -76,6 +78,7 @@ def listCommand(commandLineArguments):
         sock = socket.socket()
         sock.connect((host,port))
         recv_listing(sock)
+        sock.close()
     else:
         displayError("Too many arguments. " + clientUsage())
 
