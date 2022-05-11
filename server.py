@@ -1,61 +1,54 @@
 import os
 import sys
 import socket
-import common_utilitities
+from common_utilitities import *
+
+
+def serverUsage():
+    return "Usage: server.py <port number>"
+
+
+
+def parseArgs(arguments):
+    return sys.argv
 
 
 
 
-
-
-def putCommand(commandLineArguments, serverRequest, sock):
-    isArgumentsCorrect = True
-    errorText = ""
+def putCommand(serverRequest, sock):
     filename = serverRequest.split('/')[1]
     filesize = int(serverRequest.split('/')[2])
-    
     if not os.path.isfile(filename):
-        sock.send("OK".encode('utf-8'))
-        common_utilitities.recv_file(sock, filename, filesize)
+        sock.send("OK/".encode('utf-8'))
+        recv_file(sock, filename, filesize)
     else:
-        errorText = "File '" + filename + "' already exists in this folder."
-        isArgumentsCorrect = False
+        displayError("Put request from client; A file named '" + filename + "' already exists in this folder.")
         sock.send("EXISTS/".encode('utf-8'))
 
-    return isArgumentsCorrect, errorText
 
 
 
-def getCommand(commandLineArguments, serverRequest, sock):
-    isArgumentsCorrect = True
-    errorText = ""
+def getCommand(serverRequest, sock):
     filename = serverRequest.split('/')[1]
     if os.path.isfile(filename):
-        messageToSend = "EXISTS" + str(os.path.getsize(filename))
+        messageToSend = "EXISTS" + '/' + str(os.path.getsize(filename))
         sock.send(messageToSend.encode('utf-8'))
         userResponse = sock.recv(1024).decode('utf-8')
-        if userResponse[:2] == 'OK':
-            common_utilitities.send_file(sock, filename)
+        if userResponse.split('/')[0] == 'OK':
+            send_file(sock, filename)
     else:
         sock.send("ERR".encode('utf-8'))
-
-    return isArgumentsCorrect, errorText
-
+        displayError("File '" + filename + "' requested by the client not found.")
 
 
-def listCommand(commandLineArguments, serverRequest, sock):
-    isArgumentsCorrect = True
-    errorText = ""
-    common_utilitities.send_listing(sock)
-    return isArgumentsCorrect, errorText
+
+def listCommand(serverRequest, sock):
+    send_listing(sock)
 
 
 
 
-
-def dispatchCommand(commandLineArguments, serverRequest, sock):
-    isArgumentsCorrect = False
-    errorText = ""
+def dispatchCommand(serverRequest, sock):
     commandMappings = {
         "GET" : getCommand,
         "PUT" : putCommand,
@@ -64,28 +57,12 @@ def dispatchCommand(commandLineArguments, serverRequest, sock):
 
     commandType = serverRequest.split("/")[0]
     if commandType in commandMappings:
-        isArgumentsCorrect, errorText = commandMappings[commandType](commandLineArguments, serverRequest, sock)
+        commandMappings[commandType](serverRequest, sock)
     else:
-        errorText = "Command not recognised."
-
-    return isArgumentsCorrect, errorText
+        displayError("Unrecognised command '" + commandType + "' received from client.")
 
 
 
-
-
-def parseArgs(arguments):
-    return sys.argv
-
-
-def usage():
-    return "Usage: server.py <port number>"
-
-
-
-def displayArgumentsError(errorText):
-    print("Error: " + errorText)
-    print(usage())
 
 
 
@@ -97,21 +74,21 @@ def dispatchServer(commandLineArguments):
         cli_sock, cli_addr = srv_sock.accept()
         request = cli_sock.recv(1024)
         serverRequest = request.decode('utf-8')
-        isArgumentsCorrect, errorText = dispatchCommand(commandLineArguments, serverRequest, cli_sock)
+        dispatchCommand(serverRequest, cli_sock)
         cli_sock.close()
+
 
 
 
 def main():
     os.chdir('server_data')
     commandLineArguments = parseArgs(sys.argv)
-    isArgumentsCorrect = False
     if len(commandLineArguments) == 2:
-        isArgumentsCorrect, errorText = dispatchServer(commandLineArguments)
+        dispatchServer(commandLineArguments)
     else:
-        errorText = "Incorrect number of arguments"
-    if not isArgumentsCorrect:
-        displayArgumentsError(errorText)
+        displayError("Incorrect number of arguments " + serverUsage())
+
+
 
 
 

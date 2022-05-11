@@ -5,31 +5,6 @@ import socket
 
 
 
-#function to log to screen
-
-
-
-
-# send_file(socket, filename): Opens the file with the given filename and sends its data over the network through the provided socket.
-
-# recv_file(socket, filename): Creates the file with the given filename and stores into it data received from the provided socket.
-
-# send_listing(socket): Generates and sends the directory listing from the server to the client via the provided socket.
-
-# recv_listing(socket): Receives the listing from the server via the provided socket and prints it on screen.
-
-
-
-
-
-
-#function to report error in command line and to output a usage text
-
-
-
-
-
-
 def send_file(sock, filename):
     with open(filename, 'rb') as file:
         bytesToSend = file.read(1024)
@@ -50,6 +25,8 @@ def recv_file(sock, filename, filesize):
         totalRecv += len(data)
         f.write(data)
         print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done: " + str(len(data)) + " bytes received")
+
+
 
 def send_listing(sock):
     cwd = os.getcwd()
@@ -74,15 +51,15 @@ def send_listing(sock):
             else:
                 sock.send(joinedStringOfFiles[bytesSent + 1:bytesSent + 1024].encode('utf-8'))
                 bytesSent += 1024
+    else:
+        displayError("Client did not return 'OK' status")
 
 
 def recv_listing(sock):
     sock.send("LIST".encode('utf-8'))
     listingString = ""
     data = sock.recv(1024).decode('utf-8')
-    print(data)
     if data.split('/')[0] == "OK":
-        print("Got OK")
         filesize = int(data.split('/')[1])
         # checksum = data.split('/')[2]
         sock.send('OK'.encode('utf-8'))
@@ -91,12 +68,23 @@ def recv_listing(sock):
         while len(listingString) < filesize:
             data = sock.recv(1024).decode('utf-8')
             listingString += data
+        displayMessage("\nLIST;")
+        displayMessage('\n'.join(listingString.split('/')))
     else:
-        isArgumentsCorrect = False
-        errorText = "Server error"
-    print("\nFILES:")
-    print('\n'.join(listingString.split('/')))
+        displayError("Server did not return 'OK' status")
 
+
+
+def displayMessage(msg):
+    print(msg)
+
+def displayError(msg):
+    msg = "[ERROR] " + msg
+    displayMessage(msg)
+
+def displatErrorAndExit(msg):
+    displayError(msg)
+    sys.exit()
 
 
 
