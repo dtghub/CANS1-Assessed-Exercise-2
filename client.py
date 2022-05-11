@@ -18,31 +18,22 @@ def usage():
 
 
 
-
 def putCommand(commandLineArguments):
     isArgumentsCorrect = True
     errorText = ""
 
-
     if len(commandLineArguments) == 5:
-        print("Your arg is put.\n")
-
-
         filename = commandLineArguments[4]
         if os.path.isfile(filename):
             host = commandLineArguments[1]
             port = int(commandLineArguments[2])
 
-
             sock = socket.socket()
             sock.connect((host,port))
             fileSize = str(os.path.getsize(filename)) 
-            print("Sending PUT")
             messageToSend = "PUT" + '/' + filename + '/' + fileSize
             sock.send(messageToSend.encode('utf-8'))
             userResponse = sock.recv(1024).decode('utf-8')
-            print("Response: " + userResponse)
-            print(userResponse.split('/')[0])
             if userResponse[:2] == 'OK':
                 common_utilitities.send_file(sock, filename)
             elif userResponse.split('/')[0] == "EXISTS":
@@ -51,9 +42,6 @@ def putCommand(commandLineArguments):
         else:
             errorText = "Filename not found"
             isArgumentsCorrect = False
-
-
-
     else:
         errorText = "Incorrect number of arguments."
         isArgumentsCorrect = False
@@ -74,8 +62,6 @@ def getCommand(commandLineArguments):
         filename = commandLineArguments[4]
 
         if not os.path.isfile(filename):
-
-            print("get file?\n")
             sock = socket.socket()
             sock.connect((host,port))
 
@@ -84,10 +70,8 @@ def getCommand(commandLineArguments):
             data = sock.recv(1024).decode('utf-8')
             if data[:6] == 'EXISTS':
                 filesize = int(data[6:])
-                print("File Exists, " + str(filesize)+" bytes")
                 sock.send('OK'.encode('utf-8'))
                 common_utilitities.recv_file(sock, filename, filesize)
-                print("Download Complete")
             else:
                 print(data)
                 print("File does not exist")
@@ -99,9 +83,7 @@ def getCommand(commandLineArguments):
     else:
         errorText = "Incorrect number of arguments."
         isArgumentsCorrect = False
-    print(commandLineArguments)
 
-        
     return isArgumentsCorrect, errorText
 
 
@@ -112,45 +94,16 @@ def getCommand(commandLineArguments):
 def listCommand(commandLineArguments):
     isArgumentsCorrect = True
     errorText = ""
-
     if len(commandLineArguments) == 4:
-        print("List request")
-
         host = commandLineArguments[1]
         port = int(commandLineArguments[2])
 
         sock = socket.socket()
         sock.connect((host,port))
-        print("Sending LIST")
-        sock.send("LIST".encode('utf-8'))
-
-
-        listingString = ""
-        # requestList(commandLineArguments)
-        print("here is your listing\n")
-        data = sock.recv(1024).decode('utf-8')
-        print(data)
-        if data.split('/')[0] == "OK":
-            print("Got OK")
-            filesize = int(data.split('/')[1])
-            # checksum = data.split('/')[2]
-            sock.send('OK'.encode('utf-8'))
-            data = sock.recv(1024).decode('utf-8')
-            listingString += data
-            while len(listingString) < filesize:
-                data = sock.recv(1024).decode('utf-8')
-                listingString += data
-        else:
-            isArgumentsCorrect = False
-            errorText = "Server error"
-        print("\nFILES:")
-        print('\n'.join(listingString.split('/')))
-
+        common_utilitities.recv_listing(sock)
     else:
         errorText = "Too many arguments."
         isArgumentsCorrect = False
-
-
     return isArgumentsCorrect, errorText
 
 
@@ -174,7 +127,6 @@ def dispatchCommand(commandLineArguments):
         isArgumentsCorrect, errorText = commandMappings[commandOption](commandLineArguments)
     else:
         errorText = "Command not recognised."
-
 
     return isArgumentsCorrect, errorText
 
@@ -201,7 +153,6 @@ def main():
         errorText = "Not enough arguments"
     if not isArgumentsCorrect:
         displayArgumentsError(errorText)
-
 
 
 main()

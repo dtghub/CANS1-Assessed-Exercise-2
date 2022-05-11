@@ -36,7 +36,6 @@ def send_file(sock, filename):
         sock.send(bytesToSend)
         while len(bytesToSend) != 0:
             bytesToSend = file.read(1024)
-            print(len(bytesToSend))
             sock.send(bytesToSend)
 
             
@@ -52,6 +51,51 @@ def recv_file(sock, filename, filesize):
         f.write(data)
         print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done: " + str(len(data)) + " bytes received")
 
+def send_listing(sock):
+    cwd = os.getcwd()
+    listOfFiles = os.listdir(cwd)
+    # Send directory listing
+
+    # Use '/' as the join character to avoid the need to escape characters, as it is not allowed as a filename character at system level in windows *nix or mac filesystems
+
+    joinedStringOfFiles = '/'.join(listOfFiles)
+    # xorChecksum = common_utilitities.calculateChecksumString(joinedStringOfFiles)
+    xorChecksum = "45" # teporary dummy value
+    lengthOfStringToSend = len(joinedStringOfFiles)
+    header = "OK/" + str(lengthOfStringToSend) + '/' + xorChecksum
+    sock.send(header.encode('utf-8'))
+    userResponse = sock.recv(1024).decode('utf-8')
+    if userResponse[:2] == 'OK':
+        bytesSent = 0
+        while bytesSent < lengthOfStringToSend:
+            if (lengthOfStringToSend - bytesSent) < 1024:
+                sock.send(joinedStringOfFiles[bytesSent:lengthOfStringToSend].encode('utf-8'))
+                bytesSent = lengthOfStringToSend
+            else:
+                sock.send(joinedStringOfFiles[bytesSent + 1:bytesSent + 1024].encode('utf-8'))
+                bytesSent += 1024
+
+
+def recv_listing(sock):
+    sock.send("LIST".encode('utf-8'))
+    listingString = ""
+    data = sock.recv(1024).decode('utf-8')
+    print(data)
+    if data.split('/')[0] == "OK":
+        print("Got OK")
+        filesize = int(data.split('/')[1])
+        # checksum = data.split('/')[2]
+        sock.send('OK'.encode('utf-8'))
+        data = sock.recv(1024).decode('utf-8')
+        listingString += data
+        while len(listingString) < filesize:
+            data = sock.recv(1024).decode('utf-8')
+            listingString += data
+    else:
+        isArgumentsCorrect = False
+        errorText = "Server error"
+    print("\nFILES:")
+    print('\n'.join(listingString.split('/')))
 
 
 
