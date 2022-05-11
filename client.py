@@ -6,81 +6,6 @@ import common_utilitities
 
 
 
-# def requestList(commandLineArguments):
-#     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
-#     cli_sock.sendall("LIST".encode('utf-8'))
-#     cli_sock.close()
-
-
-#     print(commandLineArguments)
-#     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
-
-#     print(commandLineArguments[1])
-#     print("point B")
-
-#     rawLengthOfStringToReceive = recvall(cli_sock, 4)
-#     lengthOfStringToReceive = struct.unpack('!I', rawLengthOfStringToReceive)
-#     directoryStringFromServer = recvall(cli_sock, lengthOfStringToReceive).decode('utf-8')
-#     cli_sock.close()
-
-
-#     print(directoryStringFromServer)
-
-#     xorChecksum = common_utilitities.calculateChecksumString(directoryStringFromServer)
-
-
-#     print("Checksum = " + xorChecksum)
-#     print("String received; " + directoryStringFromServer[0,-1])
-
-
-
-# def recvall(sock, count):
-#     buf = b''
-#     while count:
-#         newbuf = sock.recv(count)
-#         if not newbuf: return None
-#         buf += newbuf
-#         count -= len(newbuf)
-#     return buf
-
-
-
-
-
-# def putFile(commandLineArguments):
-#     cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     cli_sock.connect((commandLineArguments[1], int(commandLineArguments[2])))
-#     cli_sock.sendall(commandLineArguments[3].encode('utf-8'))
-
-#     cli_sock.close()
-#     return True
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def parseArgs(arguments):
     print('#arguments: ' + str(len(sys.argv)))
@@ -117,13 +42,12 @@ def putCommand(commandLineArguments):
             sock.send(messageToSend.encode('utf-8'))
             userResponse = sock.recv(1024).decode('utf-8')
             print("Response: " + userResponse)
+            print(userResponse.split('/')[0])
             if userResponse[:2] == 'OK':
-                with open(filename, 'rb') as f:
-                    bytesToSend = f.read(1024)
-                    sock.send(bytesToSend)
-                    while len(bytesToSend) != 0:
-                        bytesToSend = f.read(1024)
-                        sock.send(bytesToSend)
+                common_utilitities.send_file(sock, filename)
+            elif userResponse.split('/')[0] == "EXISTS":
+                errorText = "Filename '" + filename + "' already exists on the server"
+                isArgumentsCorrect = False
         else:
             errorText = "Filename not found"
             isArgumentsCorrect = False
@@ -149,37 +73,35 @@ def getCommand(commandLineArguments):
         port = int(commandLineArguments[2])
         filename = commandLineArguments[4]
 
-        print("get file?\n")
-        sock = socket.socket()
-        sock.connect((host,port))
+        if not os.path.isfile(filename):
 
-        messageToSend = "GET"+"/"+filename
-        sock.send(messageToSend.encode('utf-8'))
-        data = sock.recv(1024).decode('utf-8')
-        if data[:6] == 'EXISTS':
-            filesize = int(data[6:])
-            print("File Exists, " + str(filesize)+" bytes")
-            sock.send('OK'.encode('utf-8'))
-            f = open('new_' + filename, 'wb')
-            data = sock.recv(1024)
-            totalRecv = len(data)
-            f.write(data)
-            while totalRecv < filesize:
-                data = sock.recv(1024)
-                totalRecv += len(data)
-                f.write(data)
-                print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done: " + str(len(data)) + " bytes received")
-            print("Download Complete")
+            print("get file?\n")
+            sock = socket.socket()
+            sock.connect((host,port))
+
+            messageToSend = "GET"+"/"+filename
+            sock.send(messageToSend.encode('utf-8'))
+            data = sock.recv(1024).decode('utf-8')
+            if data[:6] == 'EXISTS':
+                filesize = int(data[6:])
+                print("File Exists, " + str(filesize)+" bytes")
+                sock.send('OK'.encode('utf-8'))
+                common_utilitities.recv_file(sock, filename, filesize)
+                print("Download Complete")
+            else:
+                print(data)
+                print("File does not exist")
+            sock.close()
         else:
-            print(data)
-            print("File does not exist")
-        sock.close()
+            errorText = "File '" + filename + "' already exists in this folder."
+            isArgumentsCorrect = False
 
     else:
         errorText = "Incorrect number of arguments."
         isArgumentsCorrect = False
     print(commandLineArguments)
-    
+
+        
     return isArgumentsCorrect, errorText
 
 
@@ -221,14 +143,8 @@ def listCommand(commandLineArguments):
         else:
             isArgumentsCorrect = False
             errorText = "Server error"
-
-        print(listingString.split('/'))
-
-
-
-
-
-
+        print("\nFILES:")
+        print('\n'.join(listingString.split('/')))
 
     else:
         errorText = "Too many arguments."
@@ -276,6 +192,7 @@ def displayArgumentsError(errorText):
 
 
 def main():
+    os.chdir('client_data')
     commandLineArguments = parseArgs(sys.argv)
     isArgumentsCorrect = False
     if len(commandLineArguments) >= 4:

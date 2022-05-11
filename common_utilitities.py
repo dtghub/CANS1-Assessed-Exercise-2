@@ -26,6 +26,36 @@ import socket
 #function to report error in command line and to output a usage text
 
 
+
+
+
+
+def send_file(sock, filename):
+    with open(filename, 'rb') as file:
+        bytesToSend = file.read(1024)
+        sock.send(bytesToSend)
+        while len(bytesToSend) != 0:
+            bytesToSend = file.read(1024)
+            print(len(bytesToSend))
+            sock.send(bytesToSend)
+
+            
+    
+def recv_file(sock, filename, filesize):
+    f = open(filename, 'xb')
+    data = sock.recv(1024)
+    totalRecv = len(data)
+    f.write(data)
+    while totalRecv < filesize:
+        data = sock.recv(1024)
+        totalRecv += len(data)
+        f.write(data)
+        print("{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% Done: " + str(len(data)) + " bytes received")
+
+
+
+
+
 # xor all the characters in a string to geneate a simple checksum
 def calculateChecksumString(stringToCheck):
     xorChecksum = 0

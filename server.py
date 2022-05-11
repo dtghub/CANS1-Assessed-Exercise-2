@@ -12,22 +12,21 @@ def putCommand(commandLineArguments, serverRequest, sock):
     isArgumentsCorrect = True
     errorText = ""
     filename = serverRequest.split('/')[1]
-    fileSize = int(serverRequest.split('/')[2])
+    filesize = int(serverRequest.split('/')[2])
+    
 
-    print("Your arg is put.\n")
-    print(serverRequest)
-    sock.send("OK".encode('utf-8'))
-    f = open('new_' + filename, 'wb')
-    data = sock.recv(1024)
-    totalRecv = len(data)
+    if not os.path.isfile(filename):
 
-    f.write(data)
-    while totalRecv < fileSize:
-        data = sock.recv(1024)
-        totalRecv += len(data)
-        f.write(data)
-        print("{0:.2f}".format((totalRecv/float(fileSize)) * 100) + "% Done: " + str(len(data)) + " bytes received")
-    print("Download Complete")
+        print("Your arg is put.\n")
+        print(serverRequest)
+        sock.send("OK".encode('utf-8'))
+        common_utilitities.recv_file(sock, filename, filesize)
+        print("Download Complete")
+    else:
+        errorText = "File '" + filename + "' already exists in this folder."
+        isArgumentsCorrect = False
+        sock.send("EXISTS/".encode('utf-8'))
+
 
     return isArgumentsCorrect, errorText
 
@@ -52,13 +51,7 @@ def getCommand(commandLineArguments, serverRequest, sock):
         userResponse = sock.recv(1024).decode('utf-8')
         print("Response: " + userResponse)
         if userResponse[:2] == 'OK':
-            with open(filename, 'rb') as f:
-                bytesToSend = f.read(1024)
-                sock.send(bytesToSend)
-                while len(bytesToSend) != 0:
-                    bytesToSend = f.read(1024)
-                    print(len(bytesToSend))
-                    sock.send(bytesToSend)
+            common_utilitities.send_file(sock, filename)
     else:
         sock.send("ERR".encode('utf-8'))
     
@@ -89,16 +82,7 @@ def listCommand(commandLineArguments, serverRequest, sock):
     print(joinedStringOfFiles)
     # print(xorChecksum)
 
-
-    # joinedStringOfFiles += chr(xorChecksum)
-
     lengthOfStringToSend = len(joinedStringOfFiles)
-
-    # cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # cli_sock.connect(("", int(commandLineArguments[1])))
-    # cli_sock.sendall(struct.pack('!I', lengthOfStringToSend))
-    # cli_sock.sendall(joinedStringOfFiles.encode('utf-8'))
-    # cli_sock.close()
 
     header = "OK/" + str(lengthOfStringToSend) + '/' + xorChecksum
     sock.send(header.encode('utf-8'))
@@ -112,11 +96,6 @@ def listCommand(commandLineArguments, serverRequest, sock):
             else:
                 sock.send(joinedStringOfFiles[bytesSent + 1:bytesSent + 1024].encode('utf-8'))
                 bytesSent += 1024
-
-
-
-
-
 
     return isArgumentsCorrect, errorText
 
@@ -184,6 +163,7 @@ def dispatchServer(commandLineArguments):
 
 
 def main():
+    os.chdir('server_data')
     commandLineArguments = parseArgs(sys.argv)
     isArgumentsCorrect = False
     if len(commandLineArguments) == 2:
