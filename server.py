@@ -20,11 +20,18 @@ def putCommand(serverRequest, sock):
     filename = serverRequest.split('/')[1]
     filesize = int(serverRequest.split('/')[2])
     if not os.path.isfile(filename):
-        sock.send("OK/".encode('utf-8'))
-        serverStatus = recv_file(sock, filename, filesize)
+        try:
+            sock.send("OK/".encode('utf-8'))
+        except socket.error as e:
+            serverStatus = "Error while preparing for file transfer with client: " + str(e)
+        else:
+            serverStatus = recv_file(sock, filename, filesize)
     else:
         serverStatus = "A file named '" + filename + "' already exists on the server."
-        sock.send("EXISTS/".encode('utf-8'))
+        try:
+            sock.send("EXISTS/".encode('utf-8'))
+        except socket.error as e:
+            serverStatus += " Error while sending 'EXISTS' message to client: " + str(e)
     
     return serverStatus
 
@@ -36,16 +43,23 @@ def getCommand(serverRequest, sock):
     filename = serverRequest.split('/')[1]
     if os.path.isfile(filename):
         messageToSend = "EXISTS" + '/' + str(os.path.getsize(filename))
-        sock.send(messageToSend.encode('utf-8'))
-        userResponse = sock.recv(1024).decode('utf-8')
-        if userResponse.split('/')[0] == 'OK':
-            serverStatus = send_file(sock, filename)
+        try:
+            sock.send(messageToSend.encode('utf-8'))
+            userResponse = sock.recv(1024).decode('utf-8')
+        except socket.error as e:
+            serverStatus = "Error while preparing for file transfer with client: " + str(e)
         else:
-            serverStatus = "Expected 'OK' response not received from client."
+            if userResponse.split('/')[0] == 'OK':
+                serverStatus = send_file(sock, filename)
+            else:
+                serverStatus = "Expected 'OK' response not received from client."
     else:
-        sock.send("ERR".encode('utf-8'))
         serverStatus = "File '" + filename + "' not found."
-
+        try:
+            sock.send("ERR".encode('utf-8'))
+        except socket.error as e:
+            serverStatus += " Error while sending 'ERR' message to client: " + str(e)
+        
     return serverStatus
 
 
@@ -86,15 +100,28 @@ def dispatchCommand(serverRequest, sock, addr):
 
 
 def dispatchServer(commandLineArguments):
-    srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    srv_sock.bind(("", int(commandLineArguments[1])))
-    srv_sock.listen(5)
-    while True:
-        cli_sock, cli_addr = srv_sock.accept()
-        request = cli_sock.recv(1024)
-        serverRequest = request.decode('utf-8')
-        dispatchCommand(serverRequest, cli_sock, cli_addr)
+    try:
+        srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        srv_sock.settimeout(10)
+        srv_sock.bind(("", int(commandLineArguments[1])))
+        srv_sock.listen(5)
+    except socket.error as e:
+        displayError("Error setting up socket: " + str(e))
         cli_sock.close()
+    else:
+        while True:
+            try:
+                cli_sock, cli_addr = srv_sock.accept()
+                request = cli_sock.recv(1024)
+                serverRequest = request.decode('utf-8')
+            except socket.error as e:
+                displayError("Error receiving connection from client: " + str(e))
+            except KeyboardInterrupt:
+                displatErrorAndExit("Keyboard interrupt. Closing.")
+            else:
+                dispatchCommand(serverRequest, cli_sock, cli_addr)
+            finally:
+                cli_sock.close()
 
 
 
