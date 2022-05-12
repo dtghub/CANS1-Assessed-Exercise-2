@@ -2,6 +2,8 @@ import os
 import sys
 import socket
 
+from importlib_metadata import files
+
 
 
 
@@ -20,9 +22,9 @@ def send_file(sock, filename):
 def recv_file(sock, filename, filesize):
     serverStatus = ""
     f = open(filename, 'xb')
-    data = sock.recv(1024)
-    totalRecv = len(data)
-    f.write(data)
+    if filesize == 0:
+        displayMessage("Source file is 0 bytes in size. File '" + filename + "' has been created, with size 0 bytes.")
+    totalRecv = 0
     while totalRecv < filesize:
         data = sock.recv(1024)
         totalRecv += len(data)

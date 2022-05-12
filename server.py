@@ -100,15 +100,17 @@ def dispatchCommand(serverRequest, sock, addr):
 
 
 def dispatchServer(commandLineArguments):
+    serverPort = commandLineArguments[1]
     try:
         srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv_sock.settimeout(10)
-        srv_sock.bind(("", int(commandLineArguments[1])))
+        srv_sock.bind(("", int(serverPort)))
         srv_sock.listen(5)
     except socket.error as e:
         displayError("Error setting up socket: " + str(e))
         cli_sock.close()
     else:
+        displayMessage("Server listening on port " + serverPort)
         while True:
             try:
                 cli_sock, cli_addr = srv_sock.accept()
