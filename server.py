@@ -114,13 +114,14 @@ def dispatchServer(commandLineArguments):
                 cli_sock, cli_addr = srv_sock.accept()
                 request = cli_sock.recv(1024)
                 serverRequest = request.decode('utf-8')
+            except socket.timeout:
+                pass
             except socket.error as e:
-                displayError("Error receiving connection from client: " + str(e))
+                    displayError("Error receiving connection from client: " + str(e))
             except KeyboardInterrupt:
                 displatErrorAndExit("Keyboard interrupt. Closing.")
             else:
                 dispatchCommand(serverRequest, cli_sock, cli_addr)
-            finally:
                 cli_sock.close()
 
 
