@@ -2,13 +2,11 @@ import os
 import sys
 import socket
 
-from importlib_metadata import files
-
 
 
 
 def send_file(sock, filename):
-    serverStatus = ""
+    successStatus = ""
     with open(filename, 'rb') as file:
         bytesToSend = file.read(1024)
         sock.send(bytesToSend)
@@ -16,33 +14,33 @@ def send_file(sock, filename):
             bytesToSend = file.read(1024)
             sock.send(bytesToSend)
 
-    return serverStatus
+    return successStatus
             
     
 def recv_file(sock, filename, filesize):
-    serverStatus = ""
-    f = open(filename, 'xb')
+    successStatus = ""
+    file = open(filename, 'xb')
     if filesize == 0:
         displayMessage("Source file is 0 bytes in size. File '" + filename + "' has been created, with size 0 bytes.")
     totalRecv = 0
     while totalRecv < filesize:
         data = sock.recv(1024)
         totalRecv += len(data)
-        f.write(data)
+        file.write(data)
         print("\r{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% done: " + str(totalRecv) + " bytes received", end = '')
     print()
 
-    return serverStatus
+    return successStatus
 
 
 
 def send_listing(sock):
     cwd = os.getcwd()
     listOfFiles = os.listdir(cwd)
-    serverStatus = ""
+    successStatus = ""
     # Send directory listing
 
-    # Use '/' as the join character to avoid the need to escape characters, as it is not allowed as a filename character at system level in windows *nix or mac filesystems
+    # Use '/' as the join character to avoid the need to escape characters. '/' was selected as it is not allowed as a filename character at system level in windows *nix or mac filesystems
 
     joinedStringOfFiles = '/'.join(listOfFiles)
     # xorChecksum = common_utilitities.calculateChecksumString(joinedStringOfFiles)
@@ -61,9 +59,9 @@ def send_listing(sock):
                 sock.send(joinedStringOfFiles[bytesSent + 1:bytesSent + 1024].encode('utf-8'))
                 bytesSent += 1024
     else:
-        serverStatus = "Client did not return 'OK' status"
+        successStatus = "Client did not return 'OK' status"
 
-    return serverStatus
+    return successStatus
 
 
 
@@ -91,21 +89,36 @@ def recv_listing(sock):
 def displayMessage(msg):
     print(msg)
 
+
 def displayError(msg):
     msg = "[ERROR] " + msg
     displayMessage(msg)
 
-def displatErrorAndExit(msg):
+def displaySuccess(msg):
+    msg = "[SUCCESS] " + msg
+    displayMessage(msg)
+
+def displayFailure(msg):
+    msg = "[FAILURE] " + msg
+    displayMessage(msg)
+
+
+def displayErrorAndExit(msg):
     displayError(msg)
     sys.exit()
 
 
+def getArgs():
+    return sys.argv
 
-# xor all the characters in a string to geneate a simple checksum
-def calculateChecksumString(stringToCheck):
+
+
+
+# xor all the bytes in a stream to geneate a simple checksum
+def calculateChecksumString(streamToCheck):
     xorChecksum = 0
-    for character in stringToCheck:
-        xorChecksum = xorChecksum ^ ord(character)
+    for byte in streamToCheck:
+        xorChecksum = xorChecksum ^ byte
     return xorChecksum
 
     

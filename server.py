@@ -4,68 +4,123 @@ import socket
 from common_utilitities import *
 
 
+
+
+
 def serverUsage():
+
     return "Usage: server.py <port number>"
 
 
 
-def parseArgs():
-    return sys.argv
+
+
+
+
+
 
 
 
 
 def putCommand(serverRequest, sock):
-    serverStatus = ""
+    successStatus = ""
     filename = serverRequest.split('/')[1]
     filesize = int(serverRequest.split('/')[2])
+
     if not os.path.isfile(filename):
+
         try:
             sock.send("OK/".encode('utf-8'))
         except socket.error as e:
-            serverStatus = "Error while preparing for file transfer with client: " + str(e)
+            successStatus = "Error while preparing for file transfer with client: " + str(e)
         else:
-            serverStatus = recv_file(sock, filename, filesize)
+            successStatus = recv_file(sock, filename, filesize)
+
+
     else:
-        serverStatus = "A file named '" + filename + "' already exists on the server."
+        successStatus = "A file named '" + filename + "' already exists on the server."
+
         try:
             sock.send("EXISTS/".encode('utf-8'))
         except socket.error as e:
-            serverStatus += " Error while sending 'EXISTS' message to client: " + str(e)
+            successStatus += " Error while sending 'EXISTS' message to client: " + str(e)
     
-    return serverStatus
+
+    return successStatus
+
+
 
 
 
 
 def getCommand(serverRequest, sock):
-    serverStatus = ""
+    successStatus = ""
     filename = serverRequest.split('/')[1]
+
     if os.path.isfile(filename):
         messageToSend = "EXISTS" + '/' + str(os.path.getsize(filename))
+
         try:
             sock.send(messageToSend.encode('utf-8'))
             userResponse = sock.recv(1024).decode('utf-8')
         except socket.error as e:
-            serverStatus = "Error while preparing for file transfer with client: " + str(e)
+            successStatus = "Error while preparing for file transfer with client: " + str(e)
         else:
             if userResponse.split('/')[0] == 'OK':
-                serverStatus = send_file(sock, filename)
+                successStatus = send_file(sock, filename)
             else:
-                serverStatus = "Expected 'OK' response not received from client."
+                successStatus = "Expected 'OK' response not received from client."
+
     else:
-        serverStatus = "File '" + filename + "' not found."
+        successStatus = "File '" + filename + "' not found."
+
         try:
             sock.send("ERR".encode('utf-8'))
         except socket.error as e:
-            serverStatus += " Error while sending 'ERR' message to client: " + str(e)
+            successStatus += " Error while sending 'ERR' message to client: " + str(e)
         
-    return serverStatus
+    return successStatus
+
+
+
+
 
 
 def listCommand(serverRequest, sock):
-    serverStatus = send_listing(sock)
-    return serverStatus
+    successStatus = send_listing(sock)
+
+    return successStatus
+
+
+
+
+
+
+
+
+
+
+
+
+
+def announceOutcomeOfRequest(successStatus, requestItems, addr):
+    serverInfo = ""
+
+    if len(requestItems) > 1:
+        serverInfo = requestItems[0] + " " + requestItems[1]
+    else:
+        serverInfo = requestItems[0]
+
+    clientInfo = "Request from client: " + serverInfo + "  Address: " + addr[0] + "  Socket: " + str(addr[1])
+
+    if successStatus == "":
+        displaySuccess(clientInfo)
+    else:
+        displayFailure(successStatus + "  " + clientInfo)
+
+
+
+
 
 
 
@@ -76,62 +131,74 @@ def dispatchCommand(serverRequest, sock, addr):
         "LIST" : listCommand,
     }
 
-    serverStatus = ""
+    successStatus = ""
     requestItems = serverRequest.split("/")
     commandType = requestItems[0]
+
     if commandType in commandMappings:
-        serverStatus = commandMappings[commandType](serverRequest, sock)
+        successStatus = commandMappings[commandType](serverRequest, sock)
     else:
-        serverStatus = "Unrecognised command '" + commandType + "' received from client."
+        successStatus = "Unrecognised command '" + commandType + "' received from client."
 
-    serverInfo = ""
-    if len(requestItems) > 1:
-        serverInfo = requestItems[0] + " " + requestItems[1]
-    else:
-        serverInfo = requestItems[0]
+    announceOutcomeOfRequest(successStatus, requestItems, addr)
 
-    clientInfo = "Request from client: " + serverInfo + "  Address: " + addr[0] + "  Socket: " + str(addr[1])
-    if serverStatus == "":
-        displayMessage("[SUCCESS] " + clientInfo)
-    else:
-        displayMessage("[ERROR] " + serverStatus + "  " + clientInfo)
+
 
 
 
 
 def dispatchServer(commandLineArguments):
     serverPort = commandLineArguments[1]
+
+
     try:
         srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        srv_sock.settimeout(10)
-        srv_sock.bind(("", int(serverPort)))
-        srv_sock.listen(5)
     except socket.error as e:
-        displayError("Error setting up socket: " + str(e))
-        cli_sock.close()
+        displayError("Error opening server socket: " + str(e))
     else:
-        displayMessage("Server listening on port " + serverPort)
-        while True:
-            try:
-                cli_sock, cli_addr = srv_sock.accept()
-                request = cli_sock.recv(1024)
-                serverRequest = request.decode('utf-8')
-            except socket.timeout:
-                pass
-            except socket.error as e:
-                    displayError("Error receiving connection from client: " + str(e))
-            except KeyboardInterrupt:
-                displatErrorAndExit("Keyboard interrupt. Closing.")
-            else:
-                dispatchCommand(serverRequest, cli_sock, cli_addr)
-                cli_sock.close()
+        try:
+            srv_sock.settimeout(10)
+            srv_sock.bind(("", int(serverPort)))
+            srv_sock.listen(5)
+        except socket.error as e:
+            displayError("Error setting up socket: " + str(e))
+            srv_sock.close()
+        else:
+            displayMessage("Server listening on port " + serverPort)
+
+            while True:
+                try:
+                    try:
+                        cli_sock, cli_addr = srv_sock.accept()
+                    except socket.error as e:
+                        displayError("Error opening connection with client: " + str(e))
+                    else:
+                        request = cli_sock.recv(1024)
+                        serverRequest = request.decode('utf-8')
+
+                except socket.timeout:
+                    pass
+                except socket.error as e:
+                    displayError("Error establishing connection from client: " + str(e))
+                    cli_sock.close()
+                except KeyboardInterrupt:
+                    displayErrorAndExit("Keyboard interrupt. Closing.")
+
+                else:
+                    if serverRequest == "":
+                        displayError("Error establishing connection from client: No request data was received from client.")
+                    else:
+                        dispatchCommand(serverRequest, cli_sock, cli_addr)
+
+                    cli_sock.close()
 
 
 
 
 def main():
     os.chdir('server_data')
-    commandLineArguments = parseArgs()
+    commandLineArguments = getArgs()
+
     if len(commandLineArguments) == 2:
         dispatchServer(commandLineArguments)
     else:

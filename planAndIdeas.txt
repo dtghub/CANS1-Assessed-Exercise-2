@@ -1,4 +1,63 @@
 
+the client should report information for every request; this report should be a single line of text including, at the very least, the IP and port number of the server, information on the request itself (type and filename, as appropriate), and its status (success/failure). For failures, the report should also include an informative message indicating the type of error (within the same single line).
+
+
+
+
+=======================================
+
+ 3import sys
+ 4
+ 5def throws():
+ 6    raise RuntimeError('this is the error message')
+ 7
+ 8def main():
+ 9    try:
+10        throws()
+11        return 0
+12    except Exception, err:
+13        sys.stderr.write('ERROR: %sn' % str(err))
+14        return 1
+15
+16if __name__ == '__main__':
+17    sys.exit(main())
+
+In the example above, all exceptions derived from Exception are caught, and just the error message is printed to stderr. The program follows the Unix convention of returning an exit code indicating whether there was an error or not.
+
+==================================================
+
+
+def SendAlert(ErrorMessage):
+    try:
+        # send email alert with error message
+        # [...]
+        pass
+    # what kind of exceptions may occur while sending email?
+    except Exception as err:
+        logger.exception('Error while sending email')
+        # we're not receiving values from this function
+        raise err
+
+def ParentFunction():
+    try:
+        # call ChildFunction
+        ChildResult = ChildFunction()
+
+        ParentResult = ChildResult
+        # do stuff with ChildResult
+        # [...]
+        return ParentResult
+    # FIXME: we should avoid catching too broad exception
+    except Exception as err:
+        # this will log full error traceback
+        # including `ChildFunction`
+        logger.exception('Error in ParentFunction')
+        ErrorMessage = str(err)
+        SendAlert(ErrorMessage)
+
+
+
+========================================
 
 3 code files;
 

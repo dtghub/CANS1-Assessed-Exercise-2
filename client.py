@@ -8,12 +8,6 @@ def clientUsage():
     return "Usage: client.py <hostname> <port> <put filename|get filename|list>"
 
 
-
-def parseArgs(arguments):
-    return sys.argv
-
-
-
 def putCommand(commandLineArguments):
     if len(commandLineArguments) == 5:
         filename = commandLineArguments[4]
@@ -33,6 +27,7 @@ def putCommand(commandLineArguments):
                 displayError("A file named '" + filename + "' already exists on the server.")
             else:
                 displayError("Server did not reply with expected 'OK' message")
+            sock.close()
         else:
             displayError("File '" + filename + "' not found.")
     else:
@@ -60,7 +55,7 @@ def getCommand(commandLineArguments):
                 recv_file(sock, filename, filesize)
             else:
                 displayError("Server did not respond with 'EXISTS' message when given filename.")
-                sock.close()
+            sock.close()
         else:
             displayError("A file named '" + filename + "' already exists in this folder.")
     else:
@@ -108,10 +103,10 @@ def dispatchCommand(commandLineArguments):
 
 def main():
     os.chdir('client_data')
-    commandLineArguments = parseArgs(sys.argv)
+    commandLineArguments = getArgs()
     if len(commandLineArguments) >= 4:
         dispatchCommand(commandLineArguments)
     else:
-        displayError("Not enough arguments " + clientUsage())
+        displayFailure("Not enough arguments " + clientUsage())
 
 main()
