@@ -8,6 +8,29 @@ def clientUsage():
     return "Usage: client.py <hostname> <port> <put filename|get filename|list>"
 
 
+
+
+def announceOutcomeOfRequest(successStatus, requestItems, addr):
+    serverInfo = ""
+
+    if len(requestItems) > 1:
+        serverInfo = requestItems[0] + " " + requestItems[1]
+    else:
+        serverInfo = requestItems[0]
+
+    clientInfo = "Response from server: " + serverInfo + "  Address: " + addr[0] + "  Socket: " + str(addr[1])
+
+    if successStatus == "":
+        displaySuccess(clientInfo)
+    else:
+        displayFailure(successStatus + "  " + clientInfo)
+
+
+
+
+
+
+
 def putCommand(commandLineArguments):
     if len(commandLineArguments) == 5:
         filename = commandLineArguments[4]
@@ -41,21 +64,28 @@ def getCommand(commandLineArguments):
         host = commandLineArguments[1]
         port = int(commandLineArguments[2])
         filename = commandLineArguments[4]
+        successStatus = ""
 
         if not os.path.isfile(filename):
-            sock = socket.socket()
-            sock.connect((host,port))
-
-            messageToSend = "GET"+"/"+filename
-            sock.send(messageToSend.encode('utf-8'))
-            data = sock.recv(1024).decode('utf-8')
-            if data.split('/')[0] == 'EXISTS':
-                filesize = int(data.split('/')[1])
-                sock.send('OK/'.encode('utf-8'))
-                recv_file(sock, filename, filesize)
+            try:
+                sock = socket.socket()
+                sock.connect((host,port))
+            except socket.error as e:
+                displayErrorAndExit("Unable to open socket connection with server; '" + str(e) + "'")
             else:
-                displayError("Server did not respond with 'EXISTS' message when given filename.")
-            sock.close()
+
+                messageToSend = "GET"+"/"+filename
+                sock.send(messageToSend.encode('utf-8'))
+                data = sock.recv(1024).decode('utf-8')
+                if data.split('/')[0] == 'EXISTS':
+                    filesize = int(data.split('/')[1])
+                    sock.send('OK/'.encode('utf-8'))
+                    successStatus = recv_file(sock, filename, filesize)
+                else:
+                    successStatus = "Server did not respond with 'EXISTS' message when given filename."
+                sock.close()
+                announceOutcomeOfRequest(successStatus, "list", [sock, host])
+
         else:
             displayError("A file named '" + filename + "' already exists in this folder.")
     else:
@@ -70,10 +100,16 @@ def listCommand(commandLineArguments):
         host = commandLineArguments[1]
         port = int(commandLineArguments[2])
 
-        sock = socket.socket()
-        sock.connect((host,port))
-        recv_listing(sock)
-        sock.close()
+        try:
+            sock = socket.socket()
+            sock.connect((host,port))
+        except socket.error as e:
+            displayErrorAndExit("Unable to open socket connection with server; '" + str(e) + "'")
+        else:
+            successStatus = recv_listing(sock)
+            sock.close()
+            announceOutcomeOfRequest(successStatus, "list", [sock, host]) 
+
     else:
         displayError("Too many arguments. " + clientUsage())
 

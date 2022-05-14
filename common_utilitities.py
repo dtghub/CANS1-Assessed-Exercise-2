@@ -23,12 +23,21 @@ def recv_file(sock, filename, filesize):
     if filesize == 0:
         displayMessage("Source file is 0 bytes in size. File '" + filename + "' has been created, with size 0 bytes.")
     totalRecv = 0
-    while totalRecv < filesize:
+    consecutiveEmptyPacketCount = 0
+    while (totalRecv < filesize) and (consecutiveEmptyPacketCount < 5):
         data = sock.recv(1024)
         totalRecv += len(data)
+        if totalRecv > 0:
+            consecutiveEmptyPacketCount = 0
+        else:
+            consecutiveEmptyPacketCount += 1
         file.write(data)
         print("\r{0:.2f}".format((totalRecv/float(filesize)) * 100) + "% done: " + str(totalRecv) + " bytes received", end = '')
     print()
+    if totalRecv != filesize:
+        successStatus = "Expected " + filesize + " bytes, but transferred " + totalRecv + " bytes"
+        # delete the file
+    # close the file
 
     return successStatus
 
@@ -67,6 +76,7 @@ def send_listing(sock):
 
 
 def recv_listing(sock):
+    successStatus = ""
     sock.send("LIST".encode('utf-8'))
     listingString = ""
     data = sock.recv(1024).decode('utf-8')
@@ -76,14 +86,18 @@ def recv_listing(sock):
         sock.send('OK/'.encode('utf-8'))
         data = sock.recv(1024).decode('utf-8')
         listingString += data
-        while len(listingString) < filesize:
+        consecutiveEmptyPacketCount = 0
+        while len(listingString) < filesize and (consecutiveEmptyPacketCount < 5):
             data = sock.recv(1024).decode('utf-8')
             listingString += data
-        displayMessage("\nLIST;")
-        displayMessage('\n'.join(listingString.split('/')))
+        if len(listingString) != filesize:
+            successStatus = "Expected " + filesize + " bytes, but transferred " + len(listingString) + " bytes"
+        else:
+            displayMessage("\nLIST;")
+            displayMessage('\n'.join(listingString.split('/')))
     else:
         displayError("Server did not return 'OK' status")
-
+    return successStatus
 
 
 def displayMessage(msg):
