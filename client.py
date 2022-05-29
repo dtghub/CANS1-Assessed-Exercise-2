@@ -10,7 +10,7 @@ def clientUsage():
 
 
 
-def announceOutcomeOfRequest(successStatus, requestItems, addr):
+def announceOutcomeOfRequest(successStatus, requestItems, sock, host):
     serverInfo = ""
 
     if len(requestItems) > 1:
@@ -18,7 +18,7 @@ def announceOutcomeOfRequest(successStatus, requestItems, addr):
     else:
         serverInfo = requestItems[0]
 
-    clientInfo = "Response from server: " + serverInfo + "  Address: " + addr[0] + "  Socket: " + str(addr[1])
+    clientInfo = "Request: " + serverInfo + "  Address: " + host + "  Socket: " + str(sock)
 
     if successStatus == "":
         displaySuccess(clientInfo)
@@ -37,6 +37,7 @@ def putCommand(commandLineArguments):
         if os.path.isfile(filename):
             host = commandLineArguments[1]
             port = int(commandLineArguments[2])
+            successStatus = ""
 
             sock = socket.socket()
             sock.connect((host,port))
@@ -45,12 +46,13 @@ def putCommand(commandLineArguments):
             sock.send(messageToSend.encode('utf-8'))
             userResponse = sock.recv(1024).decode('utf-8')
             if userResponse.split('/')[0] == 'OK':
-                send_file(sock, filename)
+                successStatus = send_file(sock, filename)
             elif userResponse.split('/')[0] == "EXISTS":
-                displayError("A file named '" + filename + "' already exists on the server.")
+                successStatus = "A file named '" + filename + "' already exists on the server."
             else:
-                displayError("Server did not reply with expected 'OK' message")
+                successStatus = "Server did not reply with expected 'OK' message"
             sock.close()
+            announceOutcomeOfRequest(successStatus, ["put", filename], port, host)
         else:
             displayError("File '" + filename + "' not found.")
     else:
@@ -84,7 +86,7 @@ def getCommand(commandLineArguments):
                 else:
                     successStatus = "Server did not respond with 'EXISTS' message when given filename."
                 sock.close()
-                announceOutcomeOfRequest(successStatus, "list", [sock, host])
+                announceOutcomeOfRequest(successStatus, ["get", filename], port, host)
 
         else:
             displayError("A file named '" + filename + "' already exists in this folder.")
@@ -108,7 +110,7 @@ def listCommand(commandLineArguments):
         else:
             successStatus = recv_listing(sock)
             sock.close()
-            announceOutcomeOfRequest(successStatus, "list", [sock, host]) 
+            announceOutcomeOfRequest(successStatus, ["list"], port, host) 
 
     else:
         displayError("Too many arguments. " + clientUsage())

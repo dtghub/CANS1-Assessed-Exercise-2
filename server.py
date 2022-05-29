@@ -157,7 +157,6 @@ def dispatchServer(commandLineArguments):
         displayError("Error opening server socket: " + str(e))
     else:
         try:
-            srv_sock.settimeout(10)
             srv_sock.bind(("", int(serverPort)))
             srv_sock.listen(5)
         except socket.error as e:
